@@ -12,7 +12,7 @@ use crate::base::NamespacedName;
 #[serde(rename_all = "PascalCase")]
 pub struct SocketMessage {
     pub name: NamespacedName,
-    pub data: Option<Value>,
+    pub data: Value,
     #[serde(rename = "RequestID")]
     pub request_id: Option<String>
 }
@@ -22,7 +22,7 @@ impl SocketMessage {
     where T : StreamduckRequest + Serialize {
         Ok(Self {
             name: value.name(),
-            data: if value.has_data() { Some(serde_json::to_value(value)?) } else { None },
+            data: serde_json::to_value(value)?,
             request_id: Some(request_id.to_string())
         })
     }

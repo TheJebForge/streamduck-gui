@@ -6,6 +6,7 @@
 
 mod device_list;
 mod util;
+mod device_editor;
 
 use std::sync::{Arc, Condvar};
 use std::thread;
@@ -15,7 +16,9 @@ use egui::style::ScrollStyle;
 use tokio::sync::mpsc::{Receiver, Sender};
 use streamduck_rust_client::base::NamespacedDeviceIdentifier;
 use crate::APIMessage;
+use crate::ui::device_editor::{device_editor, DeviceEditor};
 use crate::ui::device_list::{device_list, DeviceList};
+use crate::ui::util::send_ui_message;
 
 pub fn ui_main(tx: Sender<UIMessage>, rx: Receiver<APIMessage>, notify: Receiver<()>) {
     let mut native_options = NativeOptions::default();
@@ -29,7 +32,8 @@ pub enum UIMessage {
     SetDeviceAutoconnect {
         identifier: NamespacedDeviceIdentifier,
         autoconnect: bool
-    }
+    },
+    ConnectDevice(NamespacedDeviceIdentifier)
 }
 
 struct UIApp {
@@ -125,6 +129,7 @@ impl UIApp {
             rx,
             state: UIState {
                 device_list: Default::default(),
+                device_editor: Default::default(),
                 current_page: Pages::DeviceList,
             }
         }
@@ -133,11 +138,25 @@ impl UIApp {
 
 pub struct UIState {
     pub device_list: DeviceList,
+    pub device_editor: DeviceEditor,
     pub current_page: Pages
 }
 
+impl UIState {
+    pub fn open_device(&mut self, sender: &Sender<UIMessage>, identifier: NamespacedDeviceIdentifier, connected: bool) {
+        if !connected {
+            send_ui_message(sender, UIMessage::ConnectDevice(identifier));
+        } else {
+            self.current_page = Pages::DeviceEditor;
+            self.device_editor.device = identifier;
+            self.device_editor.connected = connected;
+        }
+    }
+}
+
 pub enum Pages {
-    DeviceList
+    DeviceList,
+    DeviceEditor
 }
 
 impl App for UIApp {
@@ -158,9 +177,17 @@ impl App for UIApp {
                     self.state.device_list.devices.iter_mut()
                         .filter(|d| d.identifier == device.identifier)
                         .for_each(|d| d.connected = true);
+
+                    if self.state.device_editor.device == device.identifier {
+                        self.state.device_editor.connected = true;
+                    }
                 }
                 APIMessage::DisconnectedDevice(device) => {
-                    self.state.device_list.devices.retain(|d| d.identifier != device)
+                    self.state.device_list.devices.retain(|d| d.identifier != device);
+
+                    if self.state.device_editor.device == device {
+                        self.state.device_editor.connected = false;
+                    }
                 }
             }
         }
@@ -168,7 +195,8 @@ impl App for UIApp {
         CentralPanel::default()
             .show(ctx, |ui| {
                 match &self.state.current_page {
-                    Pages::DeviceList => device_list(ui, &mut self.state, &self.tx)
+                    Pages::DeviceList => device_list(ui, &mut self.state, &self.tx),
+                    Pages::DeviceEditor => device_editor(ui, &mut self.state, &self.tx)
                 }
             });
     }

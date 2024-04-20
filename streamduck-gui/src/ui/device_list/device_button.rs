@@ -58,7 +58,7 @@ pub fn device_button(ui: &mut Ui, device: &NamespacedDeviceIdentifier, connected
 
     let animated_bool_id = id.with("animated_bool");
     let lerped_autoconnect = ui.ctx()
-        .animate_bool_with_time(animated_bool_id, autoconnect, 0.15)
+        .animate_value_with_time(animated_bool_id, if autoconnect { 1.0 } else { 0.0 }, 0.15)
         .cubic_in_out();
 
     let checkbox_fg_rect = checkbox_bg_rect.shrink(
@@ -71,6 +71,38 @@ pub fn device_button(ui: &mut Ui, device: &NamespacedDeviceIdentifier, connected
         f32::lerp(&10.0, &(rounding - 2.0), &lerped_autoconnect),
         selection,
         Stroke::NONE);
+
+    // Connected tip
+    let animated_connected_id = id.with("connected_tip");
+    let animated_connected = ui.ctx().animate_value_with_time(
+        animated_connected_id,
+        if connected { 1.0 } else { 0.0 },
+        0.15
+    );
+
+    let connected_color = lerp_color(
+        &Color32::TRANSPARENT,
+        &Color32::BLACK,
+        animated_connected.cubic_in_out()
+    );
+
+    let connected_galley = ui.painter().layout(
+        "CONNECTED".to_string(),
+        FontId::new(20.0, FontFamily::Monospace),
+        connected_color,
+        1000.0
+    );
+
+    let connected_text_gap = (main_button_rect.height() / 2.0 - connected_galley.rect.height() / 2.0);
+
+    ui.painter().galley(
+        pos2(
+            main_button_rect.max.x - connected_text_gap - connected_galley.rect.width(),
+            main_button_rect.min.y + connected_text_gap
+        ),
+        connected_galley,
+        Color32::WHITE
+    );
 
     // Device name
     let top_text_galley = ui.painter().layout(
@@ -106,38 +138,6 @@ pub fn device_button(ui: &mut Ui, device: &NamespacedDeviceIdentifier, connected
     ui.painter().galley(
         second_text_pos,
         bottom_text_galley,
-        Color32::WHITE
-    );
-
-    // Connected tip
-    let animated_connected_id = id.with("connected_tip");
-    let animated_connected = ui.ctx().animate_bool_with_time(
-        animated_connected_id,
-        connected,
-        0.15
-    );
-
-    let connected_color = lerp_color(
-        &Color32::TRANSPARENT,
-        &Color32::BLACK,
-        animated_connected.cubic_in_out()
-    );
-
-    let connected_galley = ui.painter().layout(
-        "CONNECTED".to_string(),
-        FontId::new(20.0, FontFamily::Monospace),
-        connected_color,
-        1000.0
-    );
-
-    let connected_text_gap = (main_button_rect.height() / 2.0 - connected_galley.rect.height() / 2.0);
-
-    ui.painter().galley(
-        pos2(
-            main_button_rect.max.x - connected_text_gap - connected_galley.rect.width(),
-            main_button_rect.min.y + connected_text_gap
-        ),
-        connected_galley,
         Color32::WHITE
     );
 

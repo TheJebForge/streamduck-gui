@@ -23,7 +23,7 @@ use serde::de::DeserializeOwned;
 use thiserror::Error;
 use tokio::sync::{mpsc, Mutex};
 use tokio::sync::oneshot;
-use crate::api::{CoreVersion, Device, ListDevices, SetDeviceAutoconnect, StreamduckRequest};
+use crate::api::{ConnectDevice, CoreVersion, Device, GetDeviceInputs, Input, ListDevices, SetDeviceAutoconnect, StreamduckRequest};
 use crate::base::NamespacedDeviceIdentifier;
 use crate::event::{SocketError, SocketEvent, StreamduckEvent};
 use crate::message::SocketMessage;
@@ -40,13 +40,15 @@ struct ClientHandler {
 }
 
 #[derive(Error, Debug)]
-enum ClientHandlerError {
+pub enum ClientHandlerError {
     #[error("Message didn't have Request ID")]
     MissingRequestID,
     #[error("Message for unknown sender")]
     MissingSender,
     #[error("Message didn't contain any data")]
-    EmptyData
+    EmptyData,
+    #[error("Error received from request: {0}")]
+    RequestError(String)
 }
 
 pub(crate) enum ClientEvent {
@@ -156,11 +158,12 @@ impl Streamduck {
     async fn send_request<S, R>(&self, value: S) -> Result<R> where S : Serialize + StreamduckRequest, R : DeserializeOwned {
         let message = self.do_request(value).await?;
 
-        let Some(data) = message.data else {
-            return Err(anyhow!(ClientHandlerError::EmptyData));
-        };
+        if message.data.is_object() && message.data.as_object().unwrap().contains_key("Error") {
+            let error = serde_json::from_value::<SocketError>(message.data)?;
+            return Err(anyhow!(ClientHandlerError::RequestError(error.error)))
+        }
 
-        Ok(serde_json::from_value(data)?)
+        Ok(serde_json::from_value(message.data)?)
     }
 
     async fn send_request_empty_response<S>(&self, value: S) -> Result<()> where S : Serialize + StreamduckRequest {
@@ -187,6 +190,18 @@ impl Streamduck {
         Ok(self.send_request_empty_response(SetDeviceAutoconnect {
             identifier,
             autoconnect,
+        }).await?)
+    }
+
+    pub async fn get_device_inputs(&self, identifier: NamespacedDeviceIdentifier) -> Result<Vec<Input>> {
+        Ok(self.send_request(GetDeviceInputs {
+            identifier,
+        }).await?)
+    }
+
+    pub async fn connect_device(&self, identifier: NamespacedDeviceIdentifier) -> Result<bool> {
+        Ok(self.send_request(ConnectDevice {
+            identifier
         }).await?)
     }
 }

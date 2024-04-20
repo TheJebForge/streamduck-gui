@@ -8,7 +8,7 @@
 use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, Default)]
 #[serde(rename_all = "PascalCase")]
 pub struct NamespacedName {
     pub plugin_name: String,
@@ -30,7 +30,7 @@ impl Display for NamespacedName {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, Default)]
 #[serde(rename_all = "PascalCase")]
 pub struct DeviceIdentifier {
     pub identifier: String,
@@ -52,7 +52,7 @@ impl Display for DeviceIdentifier {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, Default)]
 pub struct NamespacedDeviceIdentifier {
     #[serde(rename = "NamespacedName")]
     pub name: NamespacedName,

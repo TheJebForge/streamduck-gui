@@ -9,7 +9,6 @@ use crate::base::{DeviceIdentifier, NamespacedDeviceIdentifier, NamespacedName};
 
 pub trait StreamduckRequest {
     fn name(&self) -> NamespacedName;
-    fn has_data(&self) -> bool;
 }
 
 #[derive(Serialize)]
@@ -19,10 +18,6 @@ impl StreamduckRequest for CoreVersion {
     fn name(&self) -> NamespacedName {
         NamespacedName::new("Core", "Socket Version")
     }
-
-    fn has_data(&self) -> bool {
-        false
-    }
 }
 
 #[derive(Serialize)]
@@ -31,10 +26,6 @@ pub struct ListDevices;
 impl StreamduckRequest for ListDevices {
     fn name(&self) -> NamespacedName {
         NamespacedName::new("Core", "List Devices")
-    }
-
-    fn has_data(&self) -> bool {
-        false
     }
 }
 
@@ -57,8 +48,53 @@ impl StreamduckRequest for SetDeviceAutoconnect {
     fn name(&self) -> NamespacedName {
         NamespacedName::new("Core", "Set Device Autoconnect")
     }
+}
 
-    fn has_data(&self) -> bool {
-        true
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
+#[serde(rename_all = "PascalCase")]
+pub struct Input {
+    pub x: i32,
+    pub y: i32,
+    pub w: u32,
+    pub h: u32,
+    pub icon: InputIcon
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
+pub enum InputIcon {
+    Button,
+    Toggle,
+    AnalogButton,
+    Slider,
+    Knob,
+    Encoder,
+    TouchScreen,
+    Joystick,
+    Trackball,
+    Touchpad,
+    Sensor
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct GetDeviceInputs {
+    pub identifier: NamespacedDeviceIdentifier
+}
+
+impl StreamduckRequest for GetDeviceInputs {
+    fn name(&self) -> NamespacedName {
+        NamespacedName::new("Core", "Get Device Inputs")
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct ConnectDevice {
+    pub identifier: NamespacedDeviceIdentifier
+}
+
+impl StreamduckRequest for ConnectDevice {
+    fn name(&self) -> NamespacedName {
+        NamespacedName::new("Core", "Connect Device")
     }
 }

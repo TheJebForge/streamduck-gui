@@ -73,6 +73,9 @@ async fn main() {
                 UIMessage::SetDeviceAutoconnect { identifier, autoconnect } => {
                     streamduck_copy.set_device_autoconnect(identifier, autoconnect).await.ok();
                 }
+                UIMessage::ConnectDevice(identifier) => {
+                    streamduck_copy.connect_device(identifier).await.ok();
+                }
             }
         }
     };

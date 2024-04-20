@@ -8,6 +8,8 @@ use std::ops::{Add, Mul, Sub};
 use egui::{Color32, Id, Response, Ui};
 use egui::style::WidgetVisuals;
 use interpolation::{Ease, Lerp};
+use tokio::sync::mpsc::Sender;
+use crate::ui::UIMessage;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Colorf32 {
@@ -106,7 +108,7 @@ pub fn lerp_f32(a: f32, b: f32, t: f32) -> f32 {
 }
 
 pub fn interact_lerped_selectable(ui: &Ui, response: &Response, selected: bool, id: Id, animation_time: f32) -> WidgetVisuals {
-    let t = ui.ctx().animate_bool_with_time(id, selected, animation_time).cubic_in_out();
+    let t = ui.ctx().animate_value_with_time(id, if selected { 1.0 } else { 0.0 }, animation_time).cubic_in_out();
 
     let selected = &ui.style().visuals.selection;
     let mut visuals = *ui.style().interact(response);
@@ -116,4 +118,24 @@ pub fn interact_lerped_selectable(ui: &Ui, response: &Response, selected: bool, 
     visuals.fg_stroke.width = f32::lerp(&visuals.fg_stroke.width, &selected.stroke.width, &t);
 
     visuals
+}
+
+pub fn lerped_selectable(ui: &Ui, selected: bool, id: Id, animation_time: f32) -> WidgetVisuals {
+    let t = ui.ctx().animate_value_with_time(id, if selected { 1.0 } else { 0.0 }, animation_time).cubic_in_out();
+
+    let selected = &ui.style().visuals.selection;
+    let mut visuals = ui.style().visuals.widgets.inactive;
+    visuals.weak_bg_fill = lerp_color(&visuals.weak_bg_fill, &selected.bg_fill, t);
+    visuals.bg_fill = lerp_color(&visuals.bg_fill, &selected.bg_fill, t);
+    visuals.fg_stroke.color = lerp_color(&visuals.fg_stroke.color, &selected.stroke.color, t);
+    visuals.fg_stroke.width = f32::lerp(&visuals.fg_stroke.width, &selected.stroke.width, &t);
+
+    visuals
+}
+
+pub fn send_ui_message(sender: &Sender<UIMessage>, message: UIMessage) {
+    let sender = sender.clone();
+    tokio::spawn(async move {
+        sender.send(message).await.ok()
+    });
 }
