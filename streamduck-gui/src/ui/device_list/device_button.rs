@@ -34,6 +34,11 @@ pub fn device_button(ui: &mut Ui, device: &NamespacedDeviceIdentifier, connected
     let main_button_response = ui.allocate_rect(main_button_rect, Sense::click());
     let checkbox_response = ui.allocate_rect(checkbox_rect, Sense::click());
 
+    // Don't draw if not visible
+    if !ui.is_rect_visible(element_rect) {
+        return DeviceButtonResponse::Nothing;
+    }
+
     let main_button_style = interact_lerped_selectable(
         ui,
         &main_button_response,

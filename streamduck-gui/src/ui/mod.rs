@@ -17,6 +17,7 @@ use tokio::sync::mpsc::{Receiver, Sender};
 use streamduck_rust_client::base::NamespacedDeviceIdentifier;
 use crate::APIMessage;
 use crate::ui::device_editor::{device_editor, DeviceEditor};
+use crate::ui::device_editor::input_grid::Grid;
 use crate::ui::device_list::{device_list, DeviceList};
 use crate::ui::util::send_ui_message;
 
@@ -33,7 +34,8 @@ pub enum UIMessage {
         identifier: NamespacedDeviceIdentifier,
         autoconnect: bool
     },
-    ConnectDevice(NamespacedDeviceIdentifier)
+    ConnectDevice(NamespacedDeviceIdentifier),
+    GetGrid(NamespacedDeviceIdentifier)
 }
 
 struct UIApp {
@@ -150,6 +152,8 @@ impl UIState {
             self.current_page = Pages::DeviceEditor;
             self.device_editor.device = identifier;
             self.device_editor.connected = connected;
+            self.device_editor.waiting_for_grid = false;
+            self.device_editor.grid = None;
         }
     }
 }
@@ -188,6 +192,10 @@ impl App for UIApp {
                     if self.state.device_editor.device == device {
                         self.state.device_editor.connected = false;
                     }
+                }
+                APIMessage::InputGrid(grid) => {
+                    self.state.device_editor.waiting_for_grid = false;
+                    self.state.device_editor.grid = Some(Grid::from_inputs(grid));
                 }
             }
         }

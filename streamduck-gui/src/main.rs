@@ -10,7 +10,7 @@ use std::sync::{Arc, Condvar};
 use streamduck_rust_client::event::StreamduckEvent;
 use streamduck_rust_client::Streamduck;
 use tokio::sync::mpsc;
-use streamduck_rust_client::api::Device;
+use streamduck_rust_client::api::{Device, Input};
 use streamduck_rust_client::base::NamespacedDeviceIdentifier;
 use crate::ui::{ui_main, UIMessage};
 
@@ -76,6 +76,16 @@ async fn main() {
                 UIMessage::ConnectDevice(identifier) => {
                     streamduck_copy.connect_device(identifier).await.ok();
                 }
+                UIMessage::GetGrid(identifier) => {
+                    match streamduck_copy.get_device_inputs(identifier).await {
+                        Ok(grid) => {
+                            api_tx_copy.send(APIMessage::InputGrid(grid)).await.ok();
+                        }
+                        Err(error) => {
+                            println!("Error while trying to get inputs! {error}")
+                        }
+                    }
+                }
             }
         }
     };
@@ -93,5 +103,7 @@ pub enum APIMessage {
     DeviceGone(NamespacedDeviceIdentifier),
 
     ConnectedDevice(Device),
-    DisconnectedDevice(NamespacedDeviceIdentifier)
+    DisconnectedDevice(NamespacedDeviceIdentifier),
+
+    InputGrid(Vec<Input>)
 }
