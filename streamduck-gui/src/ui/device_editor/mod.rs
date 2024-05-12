@@ -6,21 +6,25 @@
 
 pub mod mini_device;
 pub mod input_grid;
+mod properties;
+mod tabs;
 
-use egui::{Align, Button, Color32, Frame, Layout, Margin, RichText, SidePanel, TopBottomPanel, Ui, vec2};
+use egui::{Align, Button, Color32, Frame, Layout, Margin, RichText, Rounding, ScrollArea, SidePanel, TopBottomPanel, Ui, vec2};
 use tokio::sync::mpsc::Sender;
 use streamduck_rust_client::api::Input;
 use streamduck_rust_client::base::NamespacedDeviceIdentifier;
 use crate::ui::{Pages, UIMessage, UIState};
 use crate::ui::device_editor::input_grid::{Grid, input_grid};
 use crate::ui::device_editor::mini_device::mini_device_button;
+use crate::ui::device_editor::properties::properties_ui;
 
 #[derive(Default)]
 pub struct DeviceEditor {
     pub device: NamespacedDeviceIdentifier,
     pub connected: bool,
     pub grid: Option<Grid>,
-    pub waiting_for_grid: bool
+    pub waiting_for_grid: bool,
+    pub grid_collapsed: bool
 }
 
 pub fn device_editor(ui: &mut Ui, state: &mut UIState, sender: &Sender<UIMessage>) {
@@ -59,14 +63,18 @@ pub fn device_editor(ui: &mut Ui, state: &mut UIState, sender: &Sender<UIMessage
     ui.add_space(5.0);
 
     ui.allocate_ui_with_layout(ui.available_size(), Layout::left_to_right(Align::Center), |ui| {
-        input_grid(ui, state, sender, |ui| {
+        input_grid(ui, state, sender, state.device_editor.grid_collapsed, |ui, state| {
             Frame::default()
-                .rounding(10.0)
-                .inner_margin(10.0)
+                .rounding(Rounding {
+                    nw: 0.0,
+                    ne: 0.0,
+                    sw: 10.0,
+                    se: 10.0
+                })
+                .inner_margin(0.0)
                 .fill(Color32::from_rgb(40, 40, 40))
                 .show(ui, |ui| {
-                    // Properties
-                    ui.allocate_space(ui.available_size());
+                    properties_ui(ui, state, sender);
                 });
         });
     });
