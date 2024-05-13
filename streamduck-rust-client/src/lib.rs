@@ -23,7 +23,7 @@ use serde::de::DeserializeOwned;
 use thiserror::Error;
 use tokio::sync::{mpsc, Mutex};
 use tokio::sync::oneshot;
-use crate::api::{ConnectDevice, CoreVersion, Device, GetDeviceInputs, Input, ListDevices, SetDeviceAutoconnect, StreamduckRequest};
+use crate::api::{ConnectDevice, CoreVersion, Device, GetDeviceInputs, GetDeviceItems, GetDeviceScreenStack, Input, ListDevices, PartialScreenItem, PopScreen, PushNewEmptyScreen, SetDeviceAutoconnect, StreamduckRequest};
 use crate::base::NamespacedDeviceIdentifier;
 use crate::event::{SocketError, SocketEvent, StreamduckEvent};
 use crate::message::SocketMessage;
@@ -201,6 +201,31 @@ impl Streamduck {
 
     pub async fn connect_device(&self, identifier: NamespacedDeviceIdentifier) -> Result<bool> {
         Ok(self.send_request(ConnectDevice {
+            identifier
+        }).await?)
+    }
+    
+    pub async fn get_device_items(&self, identifier: NamespacedDeviceIdentifier, previews: Option<bool>) -> Result<Vec<Option<PartialScreenItem>>> {
+        Ok(self.send_request(GetDeviceItems {
+            identifier,
+            get_previews: previews.unwrap_or(false),
+        }).await?)
+    }
+    
+    pub async fn get_device_screen_stack(&self, identifier: NamespacedDeviceIdentifier) -> Result<Vec<String>> {
+        Ok(self.send_request(GetDeviceScreenStack {
+            identifier
+        }).await?)
+    }
+    
+    pub async fn pop_screen(&self, identifier: NamespacedDeviceIdentifier) -> Result<bool> {
+        Ok(self.send_request(PopScreen {
+            identifier
+        }).await?)
+    }
+    
+    pub async fn push_new_empty_screen(&self, identifier: NamespacedDeviceIdentifier) -> Result<()> {
+        Ok(self.send_request_empty_response(PushNewEmptyScreen {
             identifier
         }).await?)
     }

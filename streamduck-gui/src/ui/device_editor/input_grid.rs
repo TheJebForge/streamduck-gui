@@ -10,6 +10,7 @@ use interpolation::Ease;
 use tokio::sync::mpsc::Sender;
 use streamduck_rust_client::api::{Input, InputIcon};
 use crate::ui::{UIMessage, UIState};
+use crate::ui::device_editor::stack::stack_line;
 use crate::ui::util::send_ui_message;
 
 #[derive(Default, Debug)]
@@ -89,10 +90,12 @@ pub fn input_grid(ui: &mut Ui, state: &mut UIState, sender: &Sender<UIMessage>, 
     let animated_collapse = ui.ctx().animate_value_with_time(
         id.with("collapse"),
         if collapsed { 0.0 } else { 1.0 },
-        0.2
+        0.2f32
     ).cubic_in_out();
 
     // Sizes
+    let draw_threshold = 2f32;
+    
     let panel_min_width = 300_f32;
     let panel_width = ui.data_mut(|t| *t.get_persisted_mut_or(id.with("width"), panel_min_width));
 
@@ -103,24 +106,40 @@ pub fn input_grid(ui: &mut Ui, state: &mut UIState, sender: &Sender<UIMessage>, 
 
     let left_width = all_width - panel_width - (resize_width / 2.0);
     let theoretical_left_width = left_width;
+    
     let left_width = left_width * animated_collapse;
 
     let input_grid_fully_visible = left_width > (theoretical_left_width - 5.0);
 
     let right_width = all_width - (left_width + resize_width);
     let height = ui.available_height();
-
+    
+    let stack_height = 45f32;
+    
     let left_size = vec2(left_width, height);
     let right_size = vec2(right_width, height);
 
-    let (left_id, left_rect) = ui.allocate_space(left_size);
+    let (_left_id, left_rect) = ui.allocate_space(left_size);
+    
+    let left_panel_top_right = left_rect.right_top();
+    let right_rect = Rect::from_min_size(
+        pos2(left_panel_top_right.x + resize_width, left_panel_top_right.y),
+        right_size
+    );
+    
+    let stack_rect = Rect::from_min_size(
+        left_rect.min,
+        vec2(theoretical_left_width, stack_height)
+    );
+    
+    let left_rect = left_rect.with_min_y(stack_rect.max.y);
 
     // Margin
     let input_margin = 10f32;
     let left_rect = left_rect.shrink(input_margin);
 
-    // Actual input grid
-    if left_width > 2.0 {
+    // Actual input grid and stack
+    if left_width > draw_threshold {
         if let Some(grid) = &state.device_editor.grid {
             let aspected_height = theoretical_left_width / grid.width_to_height_ratio;
             let expected_height = f32::min(aspected_height, left_rect.height());
@@ -171,7 +190,7 @@ pub fn input_grid(ui: &mut Ui, state: &mut UIState, sender: &Sender<UIMessage>, 
 
             if !state.device_editor.waiting_for_grid {
                 state.device_editor.waiting_for_grid = true;
-                send_ui_message(sender, UIMessage::GetGrid(state.device_editor.device.clone()));
+                send_ui_message(sender, UIMessage::GetDeviceState(state.device_editor.device.clone()));
             }
         }
     }
@@ -201,8 +220,13 @@ pub fn input_grid(ui: &mut Ui, state: &mut UIState, sender: &Sender<UIMessage>, 
         }
     }
 
+    // Stack UI
+    if left_width > draw_threshold {
+        ui.allocate_ui_at_rect(stack_rect, |ui| stack_line(ui, state, sender));
+    }
+    
     // Right UI
-    ui.allocate_ui(right_size, |ui| inner_ui(ui, state));
+    ui.allocate_ui_at_rect(right_rect, |ui| inner_ui(ui, state));
 
     // Restore spacing
     ui.spacing_mut().item_spacing = old_spacing;

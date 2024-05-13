@@ -8,6 +8,7 @@ pub mod mini_device;
 pub mod input_grid;
 mod properties;
 mod tabs;
+mod stack;
 
 use egui::{Align, Button, Color32, Frame, Layout, Margin, RichText, Rounding, ScrollArea, SidePanel, TopBottomPanel, Ui, vec2};
 use tokio::sync::mpsc::Sender;
@@ -23,6 +24,7 @@ pub struct DeviceEditor {
     pub device: NamespacedDeviceIdentifier,
     pub connected: bool,
     pub grid: Option<Grid>,
+    pub stack: Vec<String>,
     pub waiting_for_grid: bool,
     pub grid_collapsed: bool
 }

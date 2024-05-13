@@ -5,7 +5,6 @@
  */
 
 use std::collections::HashSet;
-use std::os::linux::raw::stat;
 use egui::{Color32, Frame, RichText, ScrollArea, Ui, vec2};
 use egui::epaint::Shadow;
 use tokio::sync::mpsc::Sender;

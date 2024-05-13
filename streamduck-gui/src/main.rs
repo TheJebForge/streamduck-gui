@@ -10,7 +10,7 @@ use std::sync::{Arc, Condvar};
 use streamduck_rust_client::event::StreamduckEvent;
 use streamduck_rust_client::Streamduck;
 use tokio::sync::mpsc;
-use streamduck_rust_client::api::{Device, Input};
+use streamduck_rust_client::api::{Device, Input, PartialScreenItem};
 use streamduck_rust_client::base::NamespacedDeviceIdentifier;
 use crate::ui::{ui_main, UIMessage};
 
@@ -76,8 +76,8 @@ async fn main() {
                 UIMessage::ConnectDevice(identifier) => {
                     streamduck_copy.connect_device(identifier).await.ok();
                 }
-                UIMessage::GetGrid(identifier) => {
-                    match streamduck_copy.get_device_inputs(identifier).await {
+                UIMessage::GetDeviceState(identifier) => {
+                    match streamduck_copy.get_device_inputs(identifier.clone()).await {
                         Ok(grid) => {
                             api_tx_copy.send(APIMessage::InputGrid(grid)).await.ok();
                         }
@@ -85,6 +85,18 @@ async fn main() {
                             println!("Error while trying to get inputs! {error}")
                         }
                     }
+
+                    match streamduck_copy.get_device_screen_stack(identifier).await {
+                        Ok(stack) => {
+                            api_tx_copy.send(APIMessage::Stack(stack)).await.ok();
+                        }
+                        Err(error) => {
+                            println!("Error while trying to get screen stack! {error}")
+                        }
+                    }
+                }
+                UIMessage::PopScreen(identifier) => {
+                    streamduck_copy.pop_screen(identifier).await.ok();
                 }
             }
         }
@@ -105,5 +117,7 @@ pub enum APIMessage {
     ConnectedDevice(Device),
     DisconnectedDevice(NamespacedDeviceIdentifier),
 
-    InputGrid(Vec<Input>)
+    InputGrid(Vec<Input>),
+    Stack(Vec<String>),
+    ScreenItems(Vec<Option<PartialScreenItem>>)
 }

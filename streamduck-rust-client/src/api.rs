@@ -98,3 +98,61 @@ impl StreamduckRequest for ConnectDevice {
         NamespacedName::new("Core", "Connect Device")
     }
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
+#[serde(rename_all = "PascalCase")]
+pub struct PartialScreenItem {
+    pub renderable: bool,
+    #[serde(rename = "Base64JPG")]
+    pub base64jpg: Option<String>
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct GetDeviceItems {
+    pub identifier: NamespacedDeviceIdentifier,
+    pub get_previews: bool
+}
+
+impl StreamduckRequest for GetDeviceItems {
+    fn name(&self) -> NamespacedName {
+        NamespacedName::new("Core", "Get Device Items")
+    }
+}
+
+
+#[derive(Serialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct GetDeviceScreenStack {
+    pub identifier: NamespacedDeviceIdentifier
+}
+
+impl StreamduckRequest for GetDeviceScreenStack {
+    fn name(&self) -> NamespacedName {
+        NamespacedName::new("Core", "Get Device Screen Stack")
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct PopScreen {
+    pub identifier: NamespacedDeviceIdentifier
+}
+
+impl StreamduckRequest for PopScreen {
+    fn name(&self) -> NamespacedName {
+        NamespacedName::new("Core", "Pop Screen")
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct PushNewEmptyScreen {
+    pub identifier: NamespacedDeviceIdentifier
+}
+
+impl StreamduckRequest for PushNewEmptyScreen {
+    fn name(&self) -> NamespacedName {
+        NamespacedName::new("Core", "Push New Empty Screen")
+    }
+}

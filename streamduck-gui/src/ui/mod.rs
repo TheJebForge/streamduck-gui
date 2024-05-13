@@ -35,7 +35,8 @@ pub enum UIMessage {
         autoconnect: bool
     },
     ConnectDevice(NamespacedDeviceIdentifier),
-    GetGrid(NamespacedDeviceIdentifier)
+    GetDeviceState(NamespacedDeviceIdentifier),
+    PopScreen(NamespacedDeviceIdentifier)
 }
 
 struct UIApp {
@@ -75,7 +76,7 @@ impl UIApp {
         font_data.tweak.y_offset_factor = 0.0;
 
         fonts.font_data.insert(
-            "nerd-mono".to_string(),
+            "roboto-mono".to_string(),
             font_data
         );
 
@@ -87,7 +88,7 @@ impl UIApp {
 
         fonts.families.get_mut(&FontFamily::Monospace)
             .unwrap()
-            .insert(0, "nerd-mono".to_string());
+            .insert(0, "roboto-mono".to_string());
 
         cc.egui_ctx.set_fonts(fonts);
 
@@ -197,6 +198,12 @@ impl App for UIApp {
                     self.state.device_editor.waiting_for_grid = false;
                     self.state.device_editor.grid = Some(Grid::from_inputs(grid));
                 }
+                
+                APIMessage::Stack(stack) => {
+                    self.state.device_editor.stack = stack;
+                }
+                
+                APIMessage::ScreenItems(_) => {}
             }
         }
 

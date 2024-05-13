@@ -13,6 +13,8 @@ use crate::ui::util::{interact_lerped_selectable, lerp_color};
 pub fn device_button(ui: &mut Ui, device: &NamespacedDeviceIdentifier, connected: bool, autoconnect: bool) -> DeviceButtonResponse {
     let max_rect = ui.max_rect();
 
+    let animation_time = 0.2f32;
+    
     let element_width = max_rect.width();
     let element_height = 80.0_f32;
 
@@ -44,14 +46,14 @@ pub fn device_button(ui: &mut Ui, device: &NamespacedDeviceIdentifier, connected
         &main_button_response,
         connected,
         id.with("main_connected"),
-        0.15
+        animation_time
     );
     let checkbox_style = interact_lerped_selectable(
         ui,
         &checkbox_response,
         connected,
         id.with("checkbox_connected"),
-        0.15
+        animation_time
     );
 
     ui.painter().rect(main_button_rect, rounding, main_button_style.bg_fill, main_button_style.bg_stroke);
@@ -82,7 +84,7 @@ pub fn device_button(ui: &mut Ui, device: &NamespacedDeviceIdentifier, connected
     let animated_connected = ui.ctx().animate_value_with_time(
         animated_connected_id,
         if connected { 1.0 } else { 0.0 },
-        0.15
+        animation_time
     );
 
     let connected_color = lerp_color(

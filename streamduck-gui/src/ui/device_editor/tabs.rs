@@ -20,26 +20,27 @@ pub fn tabs<'a>(ui: &mut Ui, tabs: &'a [String], current_tab: &'a String, bottom
     let animated_collapse = ui.ctx().animate_value_with_time(
         Id::new(tabs).with("collapse"),
         if collapsed { 0.0 } else { 1.0 },
-        0.2
+        0.2f32
     ).cubic_in_out();
 
-    let tab_height = 40f32 * animated_collapse;
+    let theoretical_tab_height = 40f32;
+    let tab_height = theoretical_tab_height * animated_collapse;
     let element_width = available_space.x;
     let element_height = tab_height + bottom_margin;
+    
+    let almost_collapsed = animated_collapse < 0.01;
+    
+    let extra_fill_height = 80f32;
 
     let (id, rect) = ui.allocate_space(vec2(element_width, element_height));
-
-
-
-
-
+    
     ui.painter().rect(rect, 0.0, ui.style().visuals.panel_fill, Stroke::NONE);
 
     let mut current_offset = 0.0f32;
     for tab in tabs {
         let galley = ui.painter().layout(
             tab.clone(),
-            FontId::new(20.0 * animated_collapse, FontFamily::Proportional),
+            FontId::new(20.0, FontFamily::Proportional),
             Color32::PLACEHOLDER,
             10000.0
         );
@@ -90,7 +91,7 @@ pub fn tabs<'a>(ui: &mut Ui, tabs: &'a [String], current_tab: &'a String, bottom
 
         let text_pos = pos2(
             tab_rect.min.x + horizontal_margin,
-            tab_rect.min.y + (tab_rect.height() / 2.0 - galley.rect.height() / 2.0)
+            tab_rect.min.y + (theoretical_tab_height / 2.0 - galley.rect.height() / 2.0)
         );
 
         ui.painter().galley(text_pos, galley, lerp_color(&Color32::TRANSPARENT, &tab_style.fg_stroke.color, animated_collapse));
@@ -99,12 +100,12 @@ pub fn tabs<'a>(ui: &mut Ui, tabs: &'a [String], current_tab: &'a String, bottom
     // Bottom adapter
     let bottom_rect = Rect::from_min_size(
         pos2(rect.min.x, rect.max.y - bottom_margin),
-        vec2(rect.width(), bottom_margin)
+        vec2(rect.width(), bottom_margin + extra_fill_height)
     );
     ui.painter().rect(
         bottom_rect,
         Rounding {
-            nw: 10.0 * (1.0 - animated_collapse),
+            nw: 10.0 * if almost_collapsed { 1.0 } else { 0.0 },
             ne: 10.0,
             sw: 0.0,
             se: 0.0,
